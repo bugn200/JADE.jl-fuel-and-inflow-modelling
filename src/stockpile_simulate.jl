@@ -25,7 +25,7 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
     d = JADEmodel.d
     sddpm = JADEmodel.sddpm
 
-    check_settings_compatibility(rundata=d.rundata, simulation=parameters)
+    check_settings_compatibility(rundata = d.rundata, simulation = parameters)
 
     @info(
         "Simulating policy '" *
@@ -84,8 +84,7 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
         :lostloadcosts,
         :contingent_storage_cost,
         :carbon_emissions,
-        :fuel_stockpile,
-        :fuel_recharge
+        :fuel_recharge,
     ]
 
     get_dual = Dict{Symbol,Function}(
@@ -155,14 +154,14 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
                 sddpm,
                 parameters.replications,
                 get_primal,
-                custom_recorders=get_dual,
-                sampling_scheme=SDDP.InSampleMonteCarlo(
-                    max_depth=wks,
-                    initial_node=parameters.initial_stage,
-                    terminate_on_cycle=false,
-                    terminate_on_dummy_leaf=false,
+                custom_recorders = get_dual,
+                sampling_scheme = SDDP.InSampleMonteCarlo(
+                    max_depth = wks,
+                    initial_node = parameters.initial_stage,
+                    terminate_on_cycle = false,
+                    terminate_on_dummy_leaf = false,
                 ),
-                incoming_state=initial_state,
+                incoming_state = initial_state,
             )
 
             for i in 1:parameters.replications
@@ -176,12 +175,6 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
                             d.rundata.scale_reservoirs,
                         )
                     end
-                    results[i][t][:fuel_stockpile] =
-                        (sequence[i][t][:fuel_stockpile].in *
-                         d.rundata.scale_reservoirs,
-                            sequence[i][t][:fuel_stockpile].out *
-                            d.rundata.scale_reservoirs,)
-
                     if results[i][t][:noise_term][:scenario] == 0
                         results[i][t][:inflow_year] = d.rundata.start_yr
                     else
@@ -197,14 +190,14 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
                 sddpm,
                 1,
                 get_primal,
-                custom_recorders=get_dual,
-                sampling_scheme=SDDP.InSampleMonteCarlo(
-                    max_depth=wks * parameters.replications,
-                    initial_node=parameters.initial_stage,
-                    terminate_on_cycle=false,
-                    terminate_on_dummy_leaf=false,
+                custom_recorders = get_dual,
+                sampling_scheme = SDDP.InSampleMonteCarlo(
+                    max_depth = wks * parameters.replications,
+                    initial_node = parameters.initial_stage,
+                    terminate_on_cycle = false,
+                    terminate_on_dummy_leaf = false,
                 ),
-                incoming_state=initial_state,
+                incoming_state = initial_state,
             )
 
             results = Vector{Dict{Symbol,Any}}[]
@@ -226,9 +219,6 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
                                     d.rundata.scale_reservoirs,
                                 )
                             end
-                        elseif sym == :fuel_stockpile
-                            results[i][t][sym] =
-                                sequence[1][(i-1)*wks+t][sym].out
                         else
                             results[i][t][sym] = sequence[1][(i-1)*wks+t][sym]
                         end
@@ -293,9 +283,9 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
                 sddpm,
                 parameters.replications,
                 get_primal,
-                sampling_scheme=SDDP.Historical(sample_paths),
-                custom_recorders=get_dual,
-                incoming_state=initial_state,
+                sampling_scheme = SDDP.Historical(sample_paths),
+                custom_recorders = get_dual,
+                incoming_state = initial_state,
             )
 
             for sim in sims
@@ -340,9 +330,9 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
                 sddpm,
                 1,
                 get_primal,
-                sampling_scheme=SDDP.Historical(sample_path),
-                custom_recorders=get_dual,
-                incoming_state=initial_state,
+                sampling_scheme = SDDP.Historical(sample_path),
+                custom_recorders = get_dual,
+                incoming_state = initial_state,
             )
         end
 
@@ -364,10 +354,6 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
                                 d.rundata.scale_reservoirs,
                             )
                         end
-                    elseif sym == :fuel_stockpile
-                        results[i][t][sym] =
-                            sequence[1][(i-1)*wks+t][sym].out
-
                     else
                         results[i][t][sym] = sequence[1][(i-1)*wks+t][sym]
                     end
@@ -410,7 +396,7 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
         results,
         d,
         parameters,
-        variables=[
+        variables = [
             :reslevel,
             :thermal_use,
             :transflow,
@@ -425,14 +411,10 @@ function simulate(JADEmodel::JADEModel, parameters::JADESimulation)
             :total_storage,
             :inflow_year,
             :mwv,
-            :fuel_stockpile,
             :fuel_recharge,
         ],
     )
 
     @info("Done.")
-    for t = 1:52
-        println(sequence[1][t][:fuel_stockpile].out)
-    end
     return results
 end

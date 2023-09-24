@@ -103,7 +103,7 @@ function DecisionRule(
     station::Symbol,
     reservoir::Symbol,
     flowtype::Symbol,
-    weeks::T where {T<:Union{Tuple{Int,Int},Int,UnitRange{Int},Vector}} = 1:52,
+    weeks::T where {T<:Union{Tuple{Int,Int},Int,UnitRange{Int},Vector}}=1:52,
 )
     if boundtype ∉ [:lower, :upper, :equality]
         error("Invalid bound type; it must be :lower, :upper or :equality.")
@@ -214,6 +214,7 @@ mutable struct Sets
     NATURAL_ARCS::Vector{NTuple{2,Symbol}} # arcs independent of hydro stations
     STATION_ARCS::Vector{NTuple{2,Symbol}} # origin and destination of water for a hydro station
     TRANS_ARCS::Vector{NTuple{2,Symbol}}   # power transmission arcs
+    STORED_FUELS::Vector{Symbol}
 end
 
 function Sets()
@@ -231,6 +232,7 @@ function Sets()
         NTuple{2,Symbol}[],
         NTuple{2,Symbol}[],
         NTuple{2,Symbol}[],
+        Symbol[],
     )
 end
 

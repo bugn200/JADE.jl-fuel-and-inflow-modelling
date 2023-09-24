@@ -20,7 +20,7 @@ splits into into a vector using ',' as the delimiter, and then applies some cust
 `trim` if `true` trailing commas will be discarded.
 
 """
-function parsefile(f::Function, file::String, trim::Bool = false)
+function parsefile(f::Function, file::String, trim::Bool=false)
     open(file, "r") do io
         while !eof(io)
             items, skip_line = getitems(io, trim)
@@ -398,6 +398,10 @@ function JADEdata(rundata::RunData)
     natural_arcs = getnaturalarcs(filedir("hydro_arcs.csv"))
     sets.NATURAL_ARCS = collect(keys(natural_arcs))
 
+    # Declare new field for stored fuel
+    sets.STORED_FUELS = [:FUEL_STORAGE]
+
+
     for j in sets.NATURAL_ARCS
         if j[1] ∉ [sets.JUNCTIONS; sets.RESERVOIRS]
             push!(sets.JUNCTIONS, j[1])
@@ -545,7 +549,7 @@ function JADEdata(rundata::RunData)
             @info("Reading demand-response tranches")
         end
         dr_tranches, en_tranches, sets.SECTORS = getdemandresponse(
-            get_file_directory("demand_response.csv", rundata, verbose = false),
+            get_file_directory("demand_response.csv", rundata, verbose=false),
             demand,
             durations,
             sets.NODES,
@@ -646,10 +650,10 @@ function backup_input_files(rundata::RunData)
     end
 
     for file in input_filenames
-        path_to_file = get_file_directory(file, rundata, verbose = false)
+        path_to_file = get_file_directory(file, rundata, verbose=false)
 
         if isfile(path_to_file)
-            cp(path_to_file, joinpath(out_path, file), force = true)
+            cp(path_to_file, joinpath(out_path, file), force=true)
         end
     end
 end
@@ -668,7 +672,7 @@ end
 
 _strip_trailing_comment(::Missing) = missing
 
-function _validate_and_strip_trailing_comment(row, required, optional = Symbol[])
+function _validate_and_strip_trailing_comment(row, required, optional=Symbol[])
     row_names = CSV.getnames(row)
     @assert length(required) <= length(row_names) <= length(required) + length(optional)
     for n in required

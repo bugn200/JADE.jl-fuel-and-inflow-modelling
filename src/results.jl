@@ -331,7 +331,7 @@ function write_training_results(
                     "EOH",
                     "$(d.rundata.policy_dir).eoh",
                 );
-                node_name_parser = t -> "$(mod(t + d.rundata.start_wk - 2, 52) + 1)",
+                node_name_parser=t -> "$(mod(t + d.rundata.start_wk - 2, 52) + 1)"
             )
             open(
                 joinpath(
@@ -365,7 +365,7 @@ function write_training_results(
     end
 
     @info("Writing cuts to DOASA-compatible files...")
-    write_DOASA_cuts(sddpm, d, joinpath(data_dir, d.rundata.policy_dir, "Cuts"))
+    # write_DOASA_cuts(sddpm, d, joinpath(data_dir, d.rundata.policy_dir, "Cuts"))
 
     return nothing
 end
@@ -374,7 +374,7 @@ function output_tidy_results(
     results::Vector{Vector{Dict{Symbol,Any}}},
     d::JADEData,
     parameters::JADESimulation;
-    variables::Array{Symbol,1},
+    variables::Array{Symbol,1}
 )
     data_dir = joinpath(
         @__JADE_DIR__,

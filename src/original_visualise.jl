@@ -27,9 +27,7 @@ function plot_storage(
     results::Array{Array{Dict{Symbol,Any},1},1},
     filename::String=Random.randstring(6);
     reservoirs::Any=collect(keys(results[1][1][:reslevel]))
-    # fuels::Any=collect(keys(results[1][1][:fuel_storage]))
-    # fuels=results[1][1][:fuel_storage]
-    # push!(reservoirs,:fue;)
+    # fuels::Any = collect(keys(results[1][1][:fuel_storage])),
 )
     plt = SDDP.SpaghettiPlot(results)
     for r in reservoirs
@@ -45,10 +43,16 @@ function plot_storage(
     SDDP.add_spaghetti(plt; title="Total Storage", ymax=4.5 * 10^3) do data
         return data[:total_storage]
     end
-
-    SDDP.add_spaghetti(plt; title="Fuel storage") do data
-        return data[:fuel_stockpile]
-    end
+    # for f in fuels
+    #     if typeof(f) <: JuMP.Containers.DenseAxisArrayKey
+    #         name = string(f[1])
+    #     else
+    #         name = string(f)
+    #     end
+    #     SDDP.add_spaghetti(plt; title = name) do data
+    #         return data[:fuel_storage][f].out
+    #     end
+    # end
 
     SDDP.add_spaghetti(plt; title="Historical year") do data
         return data[:inflow_year]
@@ -121,8 +125,8 @@ storage (GWh) as an interactive webpage.
 function plot_watervalues(
     results::Array{Array{Dict{Symbol,Any},1},1},
     filename::String=Random.randstring(6);
-    reservoirs::Any=collect(keys(results[1][1][:reslevel]))
-    # fuels::Any=collect(keys(results[1][1][:fuel_storage]))
+    reservoirs::Any=collect(keys(results[1][1][:reslevel])),
+    fuels::Any=collect(keys(results[1][1][:fuel_storage]))
 )
     plt = SDDP.SpaghettiPlot(results)
     for r in reservoirs
@@ -143,24 +147,22 @@ function plot_watervalues(
     SDDP.add_spaghetti(plt; title="Total Storage", ymax=4.5 * 10^3) do data
         return data[:total_storage]
     end
-    SDDP.add_spaghetti(plt; title="Fuel storage") do data
-        return data[:fuel_stockpile]
+
+    for f in fuels
+        if typeof(f) <: JuMP.Containers.DenseAxisArrayKey
+            name = string(f[1])
+            ff = f[1]
+        else
+            name = string(f)
+            ff = f
+        end
+        SDDP.add_spaghetti(plt; title=name * " storage") do data
+            return data[:fuel_storage][f].out
+        end
+        SDDP.add_spaghetti(plt; title=name * " MFV") do data
+            return data[:mfv][ff]
+        end
     end
-    # for f in fuels
-    #     if typeof(f) <: JuMP.Containers.DenseAxisArrayKey
-    #         name = string(f[1])
-    #         ff = f[1]
-    #     else
-    #         name = string(f)
-    #         ff = f
-    #     end
-    #     SDDP.add_spaghetti(plt; title=name * " storage") do data
-    #         return data[:fuel_storage][f].out
-    #     end
-    #     SDDP.add_spaghetti(plt; title=name * " MFV") do data
-    #         return data[:mfv][ff]
-    #     end
-    # end
 
     SDDP.add_spaghetti(plt; title="Historical year") do data
         return data[:inflow_year]

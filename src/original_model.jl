@@ -15,7 +15,7 @@ Returns an `SDDPModel` object.
 `d` is a `JADEData` object.
 `optimizer` is a `JuMP` optimizer.
 """
-function JADEsddp(d::JADEData, optimizer=nothing)
+function JADEsddp(d::JADEData, optimizer = nothing)
 
     # Constants
     penalty_ub = d.rundata.penalty_ub
@@ -25,8 +25,6 @@ function JADEsddp(d::JADEData, optimizer=nothing)
     nmargins = length(d.terminal_eqns)
     scale_factor = d.rundata.scale_reservoirs
     scale_obj = d.rundata.scale_objective
-    check = zeros(52)
-    check[1] = 1
 
     @assert nmargins > 0
 
@@ -57,9 +55,9 @@ function JADEsddp(d::JADEData, optimizer=nothing)
 
     sddpm = SDDP.PolicyGraph(
         graph,
-        sense=:Min,
-        lower_bound=0,
-        optimizer=optimizer,
+        sense = :Min,
+        lower_bound = 0,
+        optimizer = optimizer,
     ) do md, stage
 
         #-------------------------------------------------------------------------
@@ -97,7 +95,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
             SDDP.State,
             initial_value = d.reservoirs[r].initial / scale_factor
         )
-        JuMP.@variable(md, fuel_stockpile >= 0, SDDP.State, initial_value = 0)
+
         #------------------------------------------------------------------------
         # Other variables
         #------------------------------------------------------------------------
@@ -151,12 +149,6 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 ] >= 0
                 # To track inflow levels seen
                 inflow[[s.CATCHMENTS_WITH_INFLOW; [:scenario]]]
-                # Fuel recharge at the beginning of each year
-                fuel_recharge >= 0
-                # Step_generator
-                step[1:3, s.THERMALS, s.BLOCKS] >= 0
-                # penalty generator
-                penalty >= 0
             end
         )
 
@@ -253,7 +245,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 d.durations[timenow][bl] * (
                     transmission[n, bl] - node_losses[n, bl] +
                     sum(thermal_use[m, bl] for m in d.nodehas[n].thermal) +
-                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro) + penalty
+                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro)
                 )
             )
         else
@@ -263,15 +255,11 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 d.durations[timenow][bl] * (
                     transmission[n, bl] +
                     sum(thermal_use[m, bl] for m in d.nodehas[n].thermal) +
-                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro) + penalty
+                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro)
                 )
             )
         end
-        JuMP.@expression(
-            md,
-            thermal_sum,
-            sum(sum(thermal_use[m, bl] for m in s.THERMALS, bl in s.BLOCKS))
-        )
+
         #------------------------------------------------------------------------
         # Define constraints
         #------------------------------------------------------------------------
@@ -287,7 +275,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 spillover[a, bl] >= spills[a, bl] - d.station_arcs[a].maxflow
 
                 # Capacity constraints
-                fuel_stockpile.out == fuel_stockpile.in - thermal_sum + check[stage] * fuel_recharge
+
                 # Hydro plant capacities
                 useHydro[m in s.HYDROS, bl in s.BLOCKS],
                 hydro_disp[m, bl] <=
@@ -304,17 +292,6 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                     (mm, bb) in keys(d.outage[timenow]) if (mm, bb) == (m, bl)
                 )
 
-                # Step generator capacities
-                usestep[g in 1:3, m in s.THERMALS, bl in s.BLOCKS],
-                step[g, m, bl] <=
-                d.thermal_stations[m].capacity - sum(
-                    d.outage[timenow][(mm, bb)] for
-                    (mm, bb) in keys(d.outage[timenow]) if (mm, bb) == (m, bl)
-                ) / 3
-
-                # Step generator summation 
-                sumstep[m in s.THERMALS, bl in s.BLOCKS],
-                step[1, m, bl] + step[2, m, bl] + step[3, m, bl] == thermal_use[m, bl]
                 # Transmission line capacities
                 transUpper[(n, m) in s.TRANS_ARCS, bl in s.BLOCKS],
                 transflow[(n, m), bl] <=
@@ -329,14 +306,14 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 notCommissioned[
                     t in s.THERMALS,
                     bl in s.BLOCKS;
-                    timenow < d.thermal_stations[t].commission
+                    timenow < d.thermal_stations[t].commission,
                 ],
                 thermal_use[t, bl] <= 0
                 decommissioned[
                     t in s.THERMALS,
                     bl in s.BLOCKS;
                     d.thermal_stations[t].decommission != TimePoint(0, 0) &&
-                        timenow > d.thermal_stations[t].decommission
+                        timenow > d.thermal_stations[t].decommission,
                 ],
                 thermal_use[t, bl] <= 0
 
@@ -595,31 +572,12 @@ function JADEsddp(d::JADEData, optimizer=nothing)
             d.durations[timenow][bl]
         )
 
-        # JuMP.@expression(
-        #     md,
-        #     immediate_cost,
-        #     sum(
-        #         (station.omcost + d.fuel_costs[timenow][station.fuel] * station.heatrate) *
-        #         thermal_use[name, bl] *
-        #         d.durations[timenow][bl] +
-        #         carbon_emissions[name, bl] * d.fuel_costs[timenow][:CO2] for
-        #         (name, station) in d.thermal_stations, bl in s.BLOCKS
-        #     ) +
-        #     sum(
-        #         station.omcost * hydro_disp[name, bl] * d.durations[timenow][bl] for
-        #         (name, station) in d.hydro_stations, bl in s.BLOCKS
-        #     ) +
-        #     flowpenalties +
-        #     lostloadcosts +
-        #     contingent_storage_cost
-        # )
-
         JuMP.@expression(
             md,
             immediate_cost,
             sum(
                 (station.omcost + d.fuel_costs[timenow][station.fuel] * station.heatrate) *
-                (0.8 * step[1, name, bl] + step[2, name, bl] + 1.2 * step[3, name, bl] + 100 * penalty) *
+                thermal_use[name, bl] *
                 d.durations[timenow][bl] +
                 carbon_emissions[name, bl] * d.fuel_costs[timenow][:CO2] for
                 (name, station) in d.thermal_stations, bl in s.BLOCKS
@@ -654,7 +612,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 )
             end
             # Cost function includes terminal values added
-            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out)
+            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost)
         end
     end
 
