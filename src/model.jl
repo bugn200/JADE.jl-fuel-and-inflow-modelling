@@ -154,7 +154,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 # Fuel recharge at the beginning of each year
                 fuel_recharge >= 0
                 # Step_generator
-                step[1:3, s.THERMALS, s.BLOCKS] >= 0
+                step[1:3] >= 0
                 # penalty generator
                 penalty >= 0
             end
@@ -304,17 +304,20 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                     (mm, bb) in keys(d.outage[timenow]) if (mm, bb) == (m, bl)
                 )
 
-                # Step generator capacities
-                usestep[g in 1:3, m in s.THERMALS, bl in s.BLOCKS],
-                step[g, m, bl] <=
-                d.thermal_stations[m].capacity - sum(
-                    d.outage[timenow][(mm, bb)] for
-                    (mm, bb) in keys(d.outage[timenow]) if (mm, bb) == (m, bl)
-                ) / 3
+                # # Step generator capacities
+                # usestep[g in 1:3, m in s.THERMALS, bl in s.BLOCKS],
+                # step[g, m, bl] <=
+                # d.thermal_stations[m].capacity - sum(
+                #     d.outage[timenow][(mm, bb)] for
+                #     (mm, bb) in keys(d.outage[timenow]) if (mm, bb) == (m, bl)
+                # ) / 3
 
                 # Step generator summation 
-                sumstep[m in s.THERMALS, bl in s.BLOCKS],
-                step[1, m, bl] + step[2, m, bl] + step[3, m, bl] == thermal_use[m, bl]
+                sumstep,
+                step[1] + step[2] + step[3] == penalty
+                # Step capacity
+                step_cap[n in 1:2],
+                step[n] <= 1e3
                 # Transmission line capacities
                 transUpper[(n, m) in s.TRANS_ARCS, bl in s.BLOCKS],
                 transflow[(n, m), bl] <=
@@ -619,7 +622,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
             immediate_cost,
             sum(
                 (station.omcost + d.fuel_costs[timenow][station.fuel] * station.heatrate) *
-                ( step[1, name, bl] + 1.2* step[2, name, bl] + 1.5 * step[3, name, bl] + 10 * penalty) *
+                (thermal_use[name, bl] + 5 * step[1] + 10 * step[2] + 100 * step[3]) *
                 d.durations[timenow][bl] +
                 carbon_emissions[name, bl] * d.fuel_costs[timenow][:CO2] for
                 (name, station) in d.thermal_stations, bl in s.BLOCKS
