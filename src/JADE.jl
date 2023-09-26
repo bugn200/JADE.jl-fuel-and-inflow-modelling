@@ -37,7 +37,7 @@ end
 include("structs.jl")
 include("data.jl")                # data file of JADE
 include("utilities.jl")
-include("model.jl")               # model file of JADE
+include("original_model.jl")               # model file of JADE
 include("results.jl")             # functions for writing results to file
 include("solve.jl")
 include("simulate.jl")

@@ -622,7 +622,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
             immediate_cost,
             sum(
                 (station.omcost + d.fuel_costs[timenow][station.fuel] * station.heatrate) *
-                (thermal_use[name, bl] + 5 * step[1] + 10 * step[2] + 100 * step[3]) *
+                (thermal_use[name, bl]) *
                 d.durations[timenow][bl] +
                 carbon_emissions[name, bl] * d.fuel_costs[timenow][:CO2] for
                 (name, station) in d.thermal_stations, bl in s.BLOCKS
@@ -657,7 +657,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 )
             end
             # Cost function includes terminal values added
-            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out)
+            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + 0.5*fuel_stockpile.out + 80 * step[1] + 100 * step[2] + 120 * step[3])
         end
     end
 
