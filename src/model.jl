@@ -27,6 +27,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
     scale_obj = d.rundata.scale_objective
     check = zeros(52)
     check[1] = 1
+    alpha=1
 
     @assert nmargins > 0
 
@@ -287,7 +288,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 spillover[a, bl] >= spills[a, bl] - d.station_arcs[a].maxflow
 
                 # Capacity constraints
-                fuel_stockpile.out == fuel_stockpile.in - thermal_sum + check[stage] * fuel_recharge
+                fuel_stockpile.out == fuel_stockpile.in - thermal_sum*alpha + check[stage] * fuel_recharge
                 # Hydro plant capacities
                 useHydro[m in s.HYDROS, bl in s.BLOCKS],
                 hydro_disp[m, bl] <=
