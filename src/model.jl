@@ -318,7 +318,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 step[1] + step[2] + step[3] == sum(penalty)
                 # Step capacity
                 step_cap[n in 1:2],
-                step[n] <= .5e3
+                step[n] <= .2e3
                 # Transmission line capacities
                 transUpper[(n, m) in s.TRANS_ARCS, bl in s.BLOCKS],
                 transflow[(n, m), bl] <=
@@ -658,7 +658,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 )
             end
             # Cost function includes terminal values added
-            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out*0.5 + 5000 * step[1] + 12500 * step[2] + 25000 * step[3])
+            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out*0.25 + 5000 * step[1] + 12500 * step[2] + 25000 * step[3])
         end
     end
 
