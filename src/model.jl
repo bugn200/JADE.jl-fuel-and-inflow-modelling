@@ -157,7 +157,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 # Step_generator
                 step[1:3] >= 0
                 # penalty generator
-                penalty >= 0
+                penalty[s.BLOCKS] >= 0
             end
         )
 
@@ -254,7 +254,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 d.durations[timenow][bl] * (
                     transmission[n, bl] - node_losses[n, bl] +
                     sum(thermal_use[m, bl] for m in d.nodehas[n].thermal) +
-                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro) + penalty
+                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro) + penalty[bl]
                 )
             )
         else
@@ -264,7 +264,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 d.durations[timenow][bl] * (
                     transmission[n, bl] +
                     sum(thermal_use[m, bl] for m in d.nodehas[n].thermal) +
-                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro) + penalty
+                    sum(hydro_disp[m, bl] for m in d.nodehas[n].hydro) + penalty[bl]
                 )
             )
         end
@@ -315,10 +315,10 @@ function JADEsddp(d::JADEData, optimizer=nothing)
 
                 # Step generator summation 
                 sumstep,
-                step[1] + step[2] + step[3] == penalty
+                step[1] + step[2] + step[3] == sum(penalty)
                 # Step capacity
                 step_cap[n in 1:2],
-                step[n] <= 1e3
+                step[n] <= .5e3
                 # Transmission line capacities
                 transUpper[(n, m) in s.TRANS_ARCS, bl in s.BLOCKS],
                 transflow[(n, m), bl] <=
