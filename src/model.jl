@@ -639,7 +639,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
 
         if stage < number_of_wks || !d.rundata.use_terminal_mwvs
             # Stage cost function not including terminal water value
-            SDDP.@stageobjective(md, immediate_cost / scale_obj+ fuel_stockpile.out + 500 * step[1] + 750 * step[2] + 1000 * step[3])
+            SDDP.@stageobjective(md, immediate_cost / scale_obj+ fuel_stockpile.out*0.25 + 5000 * step[1] + 12500 * step[2] + 25000 * step[3])
         else
             # Convert stored water in Mm³ to MWh
             JuMP.@expression(
