@@ -658,7 +658,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 )
             end
             # Cost function includes terminal values added
-            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out + 15000 * step[1] + 20000 * step[2] + 25000 * step[3])
+            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out + 250000 * step[1] + 300000 * step[2] + 350000 * step[3])
         end
     end
 
