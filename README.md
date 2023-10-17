@@ -32,3 +32,8 @@ of Auckland. JADE is licensed under the
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://EPOC-NZ.github.io/JADE.jl
+
+# Stockpile model  
+The stockpile model was created by Ba Trieu Minh Nguyen at the University of Auckland to model how much should we purchase the stockpile by adding a new model to it. It is run with steady-state.
+## How to run Stockpile model:
+Set `alpha` in `model.jl` to be 1 and change `runJADE.jl` to test1/run4. Change how many times you want to train and simulate in `runJADE/Input/test1/run4.csv`

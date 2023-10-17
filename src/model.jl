@@ -27,7 +27,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
     scale_obj = d.rundata.scale_objective
     check = zeros(52)
     check[1] = 1
-    alpha=1
+    alpha = 1
 
     @assert nmargins > 0
 
@@ -271,7 +271,12 @@ function JADEsddp(d::JADEData, optimizer=nothing)
         JuMP.@expression(
             md,
             thermal_sum,
-            sum(sum(thermal_use[m, bl] for m in s.THERMALS, bl in s.BLOCKS))
+            sum(thermal_use[m, bl] * d.durations[timenow][bl] for m in s.THERMALS, bl in s.BLOCKS)
+        )
+        JuMP.@expression(
+            md,
+            penalty_sum,
+            sum(penalty[bl] * d.durations[timenow][bl] for bl in s.BLOCKS)
         )
         #------------------------------------------------------------------------
         # Define constraints
@@ -288,7 +293,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 spillover[a, bl] >= spills[a, bl] - d.station_arcs[a].maxflow
 
                 # Capacity constraints
-                fuel_stockpile.out == fuel_stockpile.in - thermal_sum*alpha + check[stage] * fuel_recharge
+                fuel_stockpile.out == fuel_stockpile.in - thermal_sum * alpha + check[stage] * fuel_recharge
                 # Hydro plant capacities
                 useHydro[m in s.HYDROS, bl in s.BLOCKS],
                 hydro_disp[m, bl] <=
@@ -313,12 +318,12 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 #     (mm, bb) in keys(d.outage[timenow]) if (mm, bb) == (m, bl)
                 # ) / 3
 
-                # Step generator summation 
+                # Step generator summation
                 sumstep,
-                step[1] + step[2] + step[3] == sum(penalty)
+                step[1] + step[2] + step[3] == penalty_sum
                 # Step capacity
                 step_cap[n in 1:2],
-                step[n] <= .2e3
+                step[n] <= .5e3
                 # Transmission line capacities
                 transUpper[(n, m) in s.TRANS_ARCS, bl in s.BLOCKS],
                 transflow[(n, m), bl] <=
@@ -639,7 +644,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
 
         if stage < number_of_wks || !d.rundata.use_terminal_mwvs
             # Stage cost function not including terminal water value
-            SDDP.@stageobjective(md, immediate_cost / scale_obj+ fuel_stockpile.out*0.25 + 50000 * step[1] + 125000 * step[2] + 250000 * step[3])
+            SDDP.@stageobjective(md, immediate_cost / scale_obj + fuel_stockpile.out + 250 * step[1] + 300 * step[2] + 350 * step[3])
         else
             # Convert stored water in Mm³ to MWh
             JuMP.@expression(
@@ -658,7 +663,7 @@ function JADEsddp(d::JADEData, optimizer=nothing)
                 )
             end
             # Cost function includes terminal values added
-            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out*0.25 + 50000 * step[1] + 125000 * step[2] + 250000 * step[3])
+            SDDP.@stageobjective(md, immediate_cost / scale_obj + terminalcost + fuel_stockpile.out + 250 * step[1] + 500 * step[2] + 850 * step[3])
         end
     end
 
